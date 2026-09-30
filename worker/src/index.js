@@ -32,7 +32,14 @@ export default {
 
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { status: originOk ? 204 : 403, headers: cors });
-    if (url.pathname === "/health") return json(200, { ok: true, model: env.GEMINI_MODEL || null });
+    if (url.pathname === "/health") {
+      if (url.searchParams.get("check") !== "gemini") return json(200, { ok: true, model: env.GEMINI_MODEL || null, keySet: Boolean(env.GEMINI_API_KEY) });
+      if (env.PLAN_LIMITER) {
+        const { success } = await env.PLAN_LIMITER.limit({ key: "selftest:" + (request.headers.get("cf-connecting-ip") || "unknown") });
+        if (!success) return json(429, { error: "rate_limited" });
+      }
+      return json(200, await selfTest(env));
+    }
     if (url.pathname !== "/plan" || request.method !== "POST") return json(404, { error: "not_found" });
     if (!originOk) return json(403, { error: "origin_not_allowed" });
     if (!env.GEMINI_API_KEY) return json(500, { error: "not_configured" });
@@ -60,27 +67,59 @@ export default {
     if (body.change) change = String(body.change).replace(/[\u0000-\u001f]/g, " ").slice(0, 500);
 
     const prompt = buildPrompt({ engine, primaryId, brief, current, fixes, change });
-    const model = env.GEMINI_MODEL || "gemini-3.5-flash";
-    const upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+    const g = await callGemini(env, prompt);
+    if (g.status === 429) return json(429, { error: "rate_limited" });
+    if (!g.ok) return json(503, { error: "upstream_error", status: g.status, detail: g.detail });
+
+    const plan = parsePlan(g.text);
+    if (!plan) return json(502, { error: "invalid_json", finishReason: g.finishReason });
+    return json(200, { plan });
+  },
+};
+
+/** One Gemini call. Returns {ok, status, text, finishReason, usage, detail}; never throws, never exposes the key. */
+async function callGemini(env, prompt, { maxOutputTokens = 32768 } = {}) {
+  const model = env.GEMINI_MODEL || "gemini-3.5-flash";
+  let res;
+  try {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.7, maxOutputTokens: 8192 },
+        // Room for the model's thinking as well as the plan: thinking models count both.
+        generationConfig: { responseMimeType: "application/json", temperature: 0.7, maxOutputTokens },
       }),
-    }).catch(() => null);
+    });
+  } catch {
+    return { ok: false, status: 0, detail: "Couldn't reach Gemini." };
+  }
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const msg = String(data?.error?.message || "").replace(/AIza[0-9A-Za-z_-]+/g, "[key]").slice(0, 300);
+    return { ok: false, status: res.status, detail: msg || `Gemini returned ${res.status}.` };
+  }
+  const cand = data?.candidates?.[0];
+  return {
+    ok: true, status: res.status,
+    text: cand?.content?.parts?.filter((p) => !p.thought).map((p) => p.text || "").join("") || "",
+    finishReason: cand?.finishReason || data?.promptFeedback?.blockReason || null,
+    usage: data?.usageMetadata || null,
+  };
+}
 
-    if (!upstream) return json(503, { error: "upstream_unreachable" });
-    if (upstream.status === 429) return json(429, { error: "rate_limited" });
-    if (!upstream.ok) return json(503, { error: "upstream_error", status: upstream.status });
-
-    const data = await upstream.json().catch(() => null);
-    const out = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
-    const plan = parsePlan(out);
-    if (!plan) return json(502, { error: "invalid_json" });
-    return json(200, { plan });
-  },
-};
+/** GET /health?check=gemini runs a real sample plan and reports what happened (no plan content). */
+async function selfTest(env) {
+  if (!env.GEMINI_API_KEY) return { ok: false, step: "key", detail: "GEMINI_API_KEY isn't set on this Worker." };
+  const brief = sanitizeBrief({ origin: "New Delhi", originId: "delhi", startDate: "2026-11-14", days: 3, vibes: ["heritage"] }, kb);
+  const t0 = Date.now();
+  const g = await callGemini(env, buildPrompt({ engine, primaryId: "jaipur", brief }));
+  const base = { model: env.GEMINI_MODEL || "gemini-3.5-flash", ms: Date.now() - t0, status: g.status, finishReason: g.finishReason, usage: g.usage };
+  if (!g.ok) return { ok: false, step: "gemini", detail: g.detail, ...base };
+  const plan = parsePlan(g.text);
+  if (!plan) return { ok: false, step: "parse", textLength: g.text.length, textStart: g.text.slice(0, 120), ...base };
+  return { ok: true, step: "done", days: plan.days.length, ...base };
+}
 
 function parsePlan(text) {
   const tryParse = (s) => { try { return JSON.parse(s); } catch { return null; } };

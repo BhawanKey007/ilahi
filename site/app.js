@@ -101,10 +101,13 @@ async function askPlanner(req, signal) {
         }),
       });
     } catch (e) {
-      throw { code: e?.name === "AbortError" ? "cancelled" : "upstream_error" };
+      throw { code: e?.name === "AbortError" ? "cancelled" : "upstream_error", ref: e?.name === "AbortError" ? undefined : "network" };
     }
     if (res.status === 429) throw { code: "rate_limited" };
-    if (!res.ok) throw { code: res.status === 502 ? "invalid_json" : "upstream_error" };
+    if (!res.ok) {
+      const info = await res.json().catch(() => ({}));
+      throw { code: res.status === 502 ? "invalid_json" : "upstream_error", ref: (info.error || "http") + "-" + (info.status || res.status) };
+    }
     const data = await res.json().catch(() => null);
     if (!data?.plan) throw { code: "invalid_json" };
     return data.plan;
@@ -113,13 +116,14 @@ async function askPlanner(req, signal) {
 }
 
 function errCopy(e) {
-  return ({
+  const ref = " (ref: " + (e?.ref || e?.code || "unknown") + ")";
+  return (({
     not_granted: "Claude wasn’t allowed for this page, so here’s a starter plan from ilAhi’s data instead.",
     sampling_disabled: "Claude isn’t available on this account, so here’s a starter plan from ilAhi’s data instead.",
     rate_limited: "The planner is busy right now. Here’s a starter plan; try again in a few minutes for a full one.",
     session_expired: "Your Claude session expired. Sign in again for a full plan; here’s a starter one meanwhile.",
     invalid_json: "The planner’s answer didn’t come through cleanly. Here’s a starter plan; tap the place again to retry.",
-  })[e?.code] || "Couldn’t reach the planner just now. Here’s a starter plan from ilAhi’s data; try again in a bit.";
+  })[e?.code] || "Couldn’t reach the planner just now. Here’s a starter plan from ilAhi’s data; try again in a bit.") + ref;
 }
 
 /* ================= Decorative regional motifs ================= */
@@ -414,7 +418,12 @@ async function buildTrip(primaryId) {
     let itin = cleanItin(state.engine, await askPlanner({ primaryId, brief: b }, state.ctl.signal), b, "ai");
     if (itin.warnings.some((w) => w.severity === "block")) {
       state.busy = { title: "Fixing a few things", step: 2 }; render();
-      itin = cleanItin(state.engine, await askPlanner({ primaryId, brief: b, current: itin, fix: true }, state.ctl.signal), b, "ai");
+      try {
+        itin = cleanItin(state.engine, await askPlanner({ primaryId, brief: b, current: itin, fix: true }, state.ctl.signal), b, "ai");
+      } catch (e) {
+        if (e?.code === "cancelled") throw e;
+        // Keep the first plan; its problems are listed on the Checks tab.
+      }
     }
     state.itin = itin;
   } catch (e) {

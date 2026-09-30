@@ -80,3 +80,30 @@ test("health check works without a key", async () => {
   const res = await worker.fetch(req(null, { method: "GET", path: "/health" }), { ALLOWED_ORIGINS: ORIGIN });
   assert.equal(res.status, 200);
 });
+
+test("self-test reports a missing key without calling Gemini", async () => {
+  const res = await worker.fetch(req(null, { method: "GET", path: "/health?check=gemini" }), { ALLOWED_ORIGINS: ORIGIN });
+  const body = await res.json();
+  assert.equal(body.ok, false);
+  assert.equal(body.step, "key");
+  assert.equal(calls.length, 0);
+});
+
+test("self-test runs a real sample plan", async () => {
+  const body = await (await worker.fetch(req(null, { method: "GET", path: "/health?check=gemini" }), env)).json();
+  assert.equal(body.ok, true);
+  assert.equal(body.days, 1);
+});
+
+test("Gemini errors come back with Google's reason, never the key", async () => {
+  geminiReply = () => new Response(JSON.stringify({ error: { message: "API key not valid: AIzaSyFAKE123. Please pass a valid API key." } }), { status: 400 });
+  const body = await (await worker.fetch(req(good), env)).json();
+  assert.equal(body.status, 400);
+  assert.match(body.detail, /API key not valid/);
+  assert.ok(!body.detail.includes("AIzaSyFAKE123"));
+});
+
+test("thinking parts are ignored when reading the plan", async () => {
+  geminiReply = () => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ thought: true, text: "planning {not json" }, { text: JSON.stringify(plan) }] } }] }), { status: 200 });
+  assert.deepEqual((await (await worker.fetch(req(good), env)).json()).plan, plan);
+});
