@@ -32,8 +32,8 @@ export default {
 
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { status: originOk ? 204 : 403, headers: cors });
-    if (url.pathname === "/health") {
-      if (url.searchParams.get("check") !== "gemini") return json(200, { ok: true, model: env.GEMINI_MODEL || null, keySet: Boolean(env.GEMINI_API_KEY) });
+    if (url.pathname === "/health") return json(200, { ok: true, model: env.GEMINI_MODEL || null, keySet: Boolean(env.GEMINI_API_KEY) });
+    if (url.pathname === "/selftest") {
       if (env.PLAN_LIMITER) {
         const { success } = await env.PLAN_LIMITER.limit({ key: "selftest:" + (request.headers.get("cf-connecting-ip") || "unknown") });
         if (!success) return json(429, { error: "rate_limited" });
@@ -108,7 +108,7 @@ async function callGemini(env, prompt, { maxOutputTokens = 32768 } = {}) {
   };
 }
 
-/** GET /health?check=gemini runs a real sample plan and reports what happened (no plan content). */
+/** GET /selftest runs a real sample plan and reports what happened (no plan content). */
 async function selfTest(env) {
   if (!env.GEMINI_API_KEY) return { ok: false, step: "key", detail: "GEMINI_API_KEY isn't set on this Worker." };
   const brief = sanitizeBrief({ origin: "New Delhi", originId: "delhi", startDate: "2026-11-14", days: 3, vibes: ["heritage"] }, kb);
