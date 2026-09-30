@@ -107,3 +107,33 @@ test("thinking parts are ignored when reading the plan", async () => {
   geminiReply = () => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ thought: true, text: "planning {not json" }, { text: JSON.stringify(plan) }] } }] }), { status: 200 });
   assert.deepEqual((await (await worker.fetch(req(good), env)).json()).plan, plan);
 });
+
+test("each plan request writes one structured log line without personal details", async () => {
+  const lines = [];
+  const orig = console.log;
+  console.log = (x) => lines.push(x);
+  try {
+    await worker.fetch(req({ ...good, brief: { ...good.brief, notes: "my phone is 98765" } }), env);
+  } finally { console.log = orig; }
+  assert.equal(lines.length, 1);
+  const l = lines[0];
+  assert.equal(l.route, "/plan");
+  assert.equal(l.status, 200);
+  assert.equal(l.dest, "jaipur");
+  assert.equal(l.kind, "plan");
+  assert.equal(l.gemini.status, 200);
+  assert.equal(typeof l.ms, "number");
+  assert.ok(!JSON.stringify(l).includes("98765"), "notes never logged");
+  assert.ok(!("ip" in l));
+});
+
+test("failures are logged with their error code", async () => {
+  const lines = [];
+  const orig = console.error;
+  console.error = (x) => lines.push(x);
+  geminiReply = () => new Response(JSON.stringify({ error: { message: "model not found" } }), { status: 404 });
+  try { await worker.fetch(req(good), env); } finally { console.error = orig; }
+  assert.equal(lines[0].status, 503);
+  assert.equal(lines[0].error, "upstream_error");
+  assert.equal(lines[0].gemini.status, 404);
+});

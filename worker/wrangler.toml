@@ -20,3 +20,9 @@ namespace_id = "1001"
 
 # The Gemini key is a secret, never stored here. Set it with:
 #   npx wrangler secret put GEMINI_API_KEY
+
+# Workers Logs: one structured line per request, searchable in the dashboard
+# (Workers & Pages → ilahi-planner → Observability). Free plan: 200,000 events/day, 3 days kept.
+[observability]
+enabled = true
+head_sampling_rate = 1

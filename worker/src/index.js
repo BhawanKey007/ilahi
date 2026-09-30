@@ -21,16 +21,39 @@ const engine = new Engine(kb);
 const MAX_BODY = 40_000;
 
 export default {
+  // Every request except health checks and CORS preflights writes ONE structured log line.
+  // Workers Logs (see [observability] in wrangler.toml) indexes its fields for search.
+  // Privacy: no IP address, no trip notes, no change text, no plan content.
   async fetch(request, env) {
+    const t0 = Date.now();
+    const url = new URL(request.url);
+    const log = { event: "ilahi", route: url.pathname, method: request.method, country: request.cf?.country ?? null };
+    let res;
+    try {
+      res = await handle(request, env, url, log);
+    } catch (e) {
+      log.error = "exception";
+      log.exception = String(e?.message || e).slice(0, 200);
+      res = new Response(JSON.stringify({ error: "internal" }), { status: 500, headers: { "content-type": "application/json" } });
+    }
+    log.status = res.status;
+    log.ms = Date.now() - t0;
+    if (request.method !== "OPTIONS" && url.pathname !== "/health") (res.status >= 500 ? console.error : console.log)(log);
+    return res;
+  },
+};
+
+async function handle(request, env, url, log) {
     const origin = request.headers.get("origin") || "";
     const allowed = (env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
     const originOk = allowed.includes(origin);
     const cors = originOk
       ? { "access-control-allow-origin": origin, "access-control-allow-methods": "POST, OPTIONS", "access-control-allow-headers": "content-type", "access-control-max-age": "86400", vary: "origin" }
       : {};
-    const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...cors } });
-
-    const url = new URL(request.url);
+    const json = (status, body) => {
+      if (body?.error) log.error = body.error;
+      return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", ...cors } });
+    };
     if (request.method === "OPTIONS") return new Response(null, { status: originOk ? 204 : 403, headers: cors });
     if (url.pathname === "/health") return json(200, { ok: true, model: env.GEMINI_MODEL || null, keySet: Boolean(env.GEMINI_API_KEY) });
     if (url.pathname === "/selftest" || url.pathname === "/selftest/quick") {
@@ -38,7 +61,9 @@ export default {
         const { success } = await env.PLAN_LIMITER.limit({ key: "selftest:" + (request.headers.get("cf-connecting-ip") || "unknown") });
         if (!success) return json(429, { error: "rate_limited" });
       }
-      return json(200, await selfTest(env, url.pathname.endsWith("/quick")));
+      const result = await selfTest(env, url.pathname.endsWith("/quick"));
+      Object.assign(log, { selftest: result.step, gemini: geminiLog(result) });
+      return json(200, result);
     }
     if (url.pathname !== "/plan" || request.method !== "POST") return json(404, { error: "not_found" });
     if (!originOk) return json(403, { error: "origin_not_allowed" });
@@ -65,17 +90,31 @@ export default {
       if (body.fix) fixes = current.warnings.filter((w) => w.severity === "block").map((w) => w.message);
     }
     if (body.change) change = String(body.change).replace(/[\u0000-\u001f]/g, " ").slice(0, 500);
+    Object.assign(log, {
+      kind: change ? "change" : fixes ? "fix" : "plan", dest: primaryId, days: brief.days, month: brief.month ?? null,
+      group: brief.group, budget: brief.budget, nationality: brief.nationality, vibes: brief.vibes.join(","), fixes: fixes?.length ?? 0,
+    });
 
     const prompt = buildPrompt({ engine, primaryId, brief, current, fixes, change });
+    const tg = Date.now();
     const g = await callGemini(env, prompt);
+    log.gemini = geminiLog({ ...g, ms: Date.now() - tg, model: env.GEMINI_MODEL });
     if (g.status === 429) return json(429, { error: "rate_limited" });
-    if (!g.ok) return json(503, { error: "upstream_error", status: g.status, detail: g.detail });
+    if (!g.ok) { log.detail = g.detail; return json(503, { error: "upstream_error", status: g.status, detail: g.detail }); }
 
     const plan = parsePlan(g.text);
-    if (!plan) return json(502, { error: "invalid_json", finishReason: g.finishReason });
+    if (!plan) { log.textLength = g.text.length; return json(502, { error: "invalid_json", finishReason: g.finishReason }); }
+    log.planDays = plan.days.length;
     return json(200, { plan });
-  },
-};
+}
+
+/** The Gemini facts worth logging: status, why it stopped, time and token counts. */
+function geminiLog(g) {
+  return {
+    model: g.model || null, status: g.status ?? null, finishReason: g.finishReason ?? null, ms: g.ms ?? null,
+    promptTokens: g.usage?.promptTokenCount ?? null, outputTokens: g.usage?.candidatesTokenCount ?? null, thoughtsTokens: g.usage?.thoughtsTokenCount ?? null,
+  };
+}
 
 /** One Gemini call. Returns {ok, status, text, finishReason, usage, detail}; never throws, never exposes the key. */
 async function callGemini(env, prompt, { maxOutputTokens = 32768 } = {}) {
