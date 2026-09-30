@@ -29,6 +29,13 @@ jobs:
           node-version: 22
       - name: Check before publishing
         run: npm run check
+      - name: Stamp the version so browsers fetch fresh files
+        run: |
+          V="${GITHUB_SHA::7}"
+          sed -i -E "s#(href|src)=\"(styles\.css|config\.js|app\.js)\"#\1=\"\2?v=$V\"#g" site/index.html
+          sed -i -E "s#from \"\./(engine|planner)\.js\"#from \"./\1.js?v=$V\"#g" site/app.js site/planner.js
+          sed -i "s#__ILAHI_VERSION__#$V#g" site/app.js
+          grep -c "?v=$V" site/index.html site/app.js site/planner.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

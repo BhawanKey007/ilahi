@@ -4,6 +4,7 @@ import { Engine, MONTHS, MONTH_NAMES, withDates, monthOf, modeName } from "./eng
 import { sanitizeBrief, buildPrompt, cleanItin, templateItin } from "./planner.js";
 
 const CONFIG = window.ILAHI_CONFIG || {};
+const VERSION = "__ILAHI_VERSION__".startsWith("__") ? "dev" : "__ILAHI_VERSION__";
 const DOW = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const WEEKDAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -273,10 +274,9 @@ function viewTrip() {
     (it.generatedBy === "template" ? '<span class="srcpill">Starter plan</span>' : "") +
     '<div class="tabs" role="tablist">' + [["timeline", "Days"], ["checks", "Checks" + (flagged ? " (" + flagged + ")" : "")], ["budget", "Budget"]]
       .map(([k, l]) => '<button class="tab" role="tab" data-tab="' + k + '" aria-selected="' + (state.tab === k) + '">' + l + "</button>").join("") + "</div></div></header>" +
-    '<div class="wrap stack" style="gap:12px;padding-block:14px">' + body + "</div>" +
+    '<div class="wrap stack" style="gap:12px;padding-block:14px">' + (state.error ? '<p class="flag sev-warn" role="alert" style="margin:0">' + esc(state.error) + "</p>" : "") + body + "</div>" +
     '<div class="wrap stack" style="gap:10px;padding-block:6px 16px">' +
       (canTweak ? '<form class="chatbox" id="tweak"><textarea id="f-tweak" rows="1" maxlength="500" aria-label="Ask for a change" placeholder="Make day 3 lighter, add a food walk…"></textarea><button class="btn primary" type="submit">Change</button></form>' : "") +
-      (state.error ? '<p class="flag sev-warn" role="alert" style="margin:0">' + esc(state.error) + "</p>" : "") +
       '<div class="grid2"><button class="btn primary" id="save">' + (saved ? "Saved ✓" : "Save trip") + '</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(shareText(it)) + '">Share on WhatsApp</a></div>' +
       '<button class="btn" id="copy">Copy plan as text</button><textarea id="copy-fallback" hidden readonly rows="6" class="field" aria-label="Plan text"></textarea>' +
     "</div>" + FOOT;
@@ -334,7 +334,8 @@ function viewAbout() {
       "<li>Every plan is checked against the rules before you see it. If it breaks one, the planner is asked to fix it.</li></ul>" +
     "<h2>Your data</h2><ul><li>Saved trips stay in this browser on this device. ilAhi has no accounts and no database.</li><li>ilAhi doesn’t use cookies or analytics.</li></ul>" +
     "<h2>Please double-check</h2><p>Travel times, prices, permits and seasonal closures change. Treat plans as guidance and confirm with official sources and operators before you book.</p>" +
-    '<h2>Open source</h2><p>ilAhi is open source. Spotted wrong travel information? <a href="https://github.com/BhawanKey007/ilahi/issues/new?template=wrong-info.yml" target="_blank" rel="noopener">Report it on GitHub</a>.</p></div>';
+    '<h2>Open source</h2><p>ilAhi is open source. Spotted wrong travel information? <a href="https://github.com/BhawanKey007/ilahi/issues/new?template=wrong-info.yml" target="_blank" rel="noopener">Report it on GitHub</a>.</p>' +
+    '<p class="muted" style="font-size:13px">Version ' + esc(VERSION) + " · AI planner: " + (state.sample ? "Claude" : CONFIG.plannerUrl ? "connected" : "not connected") + "</p></div>";
 }
 
 /* ================= Events ================= */
@@ -411,6 +412,7 @@ async function buildTrip(primaryId) {
   state.fromTrips = false; state.tab = "timeline"; state.error = "";
   if (!(await hasAI())) {
     state.itin = templateItin(state.engine, primaryId, b);
+    state.error = "No AI planner is connected to this copy of ilAhi, so this is a starter plan from its travel data. (ref: no-planner-" + VERSION + ")";
     state.view = "trip"; render(); return;
   }
   const stop = startBusy("Planning " + state.engine.name(primaryId), 0);
@@ -454,7 +456,7 @@ async function tweakTrip(request) {
   try {
     const files = ["destinations", "legs", "rules", "gateways"];
     const [destinations, legs, rules, gateways] = await Promise.all(files.map((f) =>
-      fetch("data/" + f + ".json").then((r) => { if (!r.ok) throw new Error(f); return r.json(); })));
+      fetch("data/" + f + ".json?v=" + VERSION).then((r) => { if (!r.ok) throw new Error(f); return r.json(); })));
     state.kb = { destinations, legs, rules, gateways };
     state.engine = new Engine(state.kb);
     render();
