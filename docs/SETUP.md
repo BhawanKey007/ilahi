@@ -67,6 +67,8 @@ Open `https://ilahi-planner.<your-subdomain>.workers.dev/health` in a browser. Y
 
 ## Keeping it running
 
+- **Is everything working?** Open the site's **About** page: the last line shows the version and "AI planner: connected". For the Worker itself, `<worker>/health` should show `"keySet":true`, and `<worker>/selftest/quick` runs a tiny Gemini request and reports the result (it uses one request from your free quota).
+- **Plans come back as "Starter plan":** the message at the top of the plan ends in a `ref` code. `no-planner` means `site/config.js` has no Worker address; `network` means the browser couldn't reach the Worker; `upstream_error-…` means Gemini refused (check the key and model with `/selftest/quick`); `invalid_json` means Gemini's answer was cut off or malformed.
 - **Updating travel data:** edit `site/data/*.json` and push. The checks run automatically, then both the site and the Worker redeploy, because the Worker carries its own copy of the data.
 - **Free limits:** all visitors share your Gemini free quota. When it runs out, visitors get starter plans until it resets. Check usage in Google AI Studio.
 - **Abuse:** the Worker only answers requests from the sites in `ALLOWED_ORIGINS`, only accepts structured trip requests, and limits each visitor to 10 plans a minute.
