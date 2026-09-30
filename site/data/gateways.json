@@ -1,0 +1,6 @@
+[
+  { "id": "njp", "name": "New Jalpaiguri / Siliguri", "kind": "rail+air", "servesIds": ["darjeeling", "gangtok"], "railCode": "NJP", "airportCode": "IXB" },
+  { "id": "guwahati", "name": "Guwahati", "kind": "rail+air", "servesIds": ["shillong", "tawang"], "railCode": "GHY", "airportCode": "GAU" },
+  { "id": "kochi", "name": "Kochi", "kind": "rail+air", "servesIds": ["munnar", "alleppey"], "railCode": "ERS", "airportCode": "COK" },
+  { "id": "chennai", "name": "Chennai", "kind": "rail+air", "servesIds": ["pondicherry", "andaman"], "railCode": "MAS", "airportCode": "MAA" }
+]

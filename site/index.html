@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ilAhi</title>
+<meta name="description" content="Plan an India trip that actually works: season-aware suggestions, real train and road times, permit and closure checks, and a budget in rupees.">
+<meta name="theme-color" content="#A8284E">
+<meta property="og:title" content="ilAhi · India trip planner">
+<meta property="og:description" content="Season-aware India itineraries with real travel times, permit checks and a rupee budget.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23A8284E'/%3E%3Cpath d='M18 54V32Q18 16 32 11Q46 16 46 32V54Z' fill='%23E0A23B'/%3E%3Cpath d='M25 54V35Q25 25 32 22Q39 25 39 35V54Z' fill='%23F6C66B'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Hind:wght@400;500;600;700&family=Yatra+One&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app" id="app">
+  <div class="loader" role="status"><p>Loading ilAhi…</p></div>
+</div>
+<nav class="nav" aria-label="Main">
+  <div class="in">
+    <button id="nav-plan" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>Plan</button>
+    <button id="nav-trips"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>My trips</button>
+    <button id="nav-about"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>About</button>
+  </div>
+</nav>
+<div class="toast" id="toast" role="status" hidden></div>
+<noscript><p style="padding:24px">ilAhi needs JavaScript to plan trips.</p></noscript>
+<script src="config.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+name = "ilahi-planner"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+# Sites allowed to call this Worker (comma-separated). Add your custom domain here if you set one up.
+ALLOWED_ORIGINS = "https://bhawankey007.github.io"
+# Any Flash model on Gemini's free tier. Check Google AI Studio for what your key can use.
+GEMINI_MODEL = "gemini-3.5-flash"
+
+# 10 plan requests per visitor (IP) per minute. Delete this block if your account doesn't support it.
+[[ratelimits]]
+name = "PLAN_LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 10
+  period = 60
+
+# The Gemini key is a secret, never stored here. Set it with:
+#   npx wrangler secret put GEMINI_API_KEY

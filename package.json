@@ -1,0 +1,16 @@
+{
+  "name": "ilahi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "India trip planner with season, permit and travel-time checks.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test \"tests/*.test.js\"",
+    "validate": "node scripts/validate-data.mjs",
+    "check": "npm run validate && npm test",
+    "start": "npx --yes serve@14 site -l 8080",
+    "build:claude": "node scripts/build-claude-artifact.mjs"
+  }
+}

@@ -1,0 +1,40 @@
+name: Deploy planner Worker
+
+# The Worker bundles the travel data and planner code, so it is redeployed whenever
+# they change. Skipped until you add the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID
+# repository secrets (see docs/SETUP.md, step 3).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "worker/**"
+      - "site/engine.js"
+      - "site/planner.js"
+      - "site/data/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check before deploying
+        run: npm run check
+      - name: Deploy to Cloudflare
+        if: env.CF_TOKEN != ''
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: worker
+      - name: Skipped
+        if: env.CF_TOKEN == ''
+        run: echo "No CLOUDFLARE_API_TOKEN secret yet, so the Worker wasn't deployed. See docs/SETUP.md."

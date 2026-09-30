@@ -1,0 +1,95 @@
+[
+  { "id": "delhi__agra", "from": "delhi", "to": "agra", "options": [
+    { "mode": "train", "durationHrs": [1.7, 3], "costInr": [500, 1600], "notes": "Gatimaan Express or Vande Bharat are fastest; book early for morning slots" },
+    { "mode": "cab", "durationHrs": [3.5, 4.5], "costInr": [1000, 1800], "notes": "Via Yamuna Expressway; per person for a shared sedan of 3" }
+  ]},
+  { "id": "delhi__jaipur", "from": "delhi", "to": "jaipur", "options": [
+    { "mode": "train", "durationHrs": [4.5, 6], "costInr": [600, 1800], "notes": "Vande Bharat / Shatabdi; morning departures" },
+    { "mode": "cab", "durationHrs": [5, 6], "costInr": [1200, 2200] },
+    { "mode": "bus", "durationHrs": [5.5, 7], "costInr": [600, 1200], "notes": "RSRTC Volvo" }
+  ]},
+  { "id": "agra__jaipur", "from": "agra", "to": "jaipur", "options": [
+    { "mode": "train", "durationHrs": [4, 5], "costInr": [400, 1400] },
+    { "mode": "cab", "durationHrs": [4.5, 5.5], "costInr": [1100, 2000], "notes": "Stop at Fatehpur Sikri or Abhaneri stepwell on the way" }
+  ]},
+  { "id": "jaipur__udaipur", "from": "jaipur", "to": "udaipur", "options": [
+    { "mode": "train", "durationHrs": [6.5, 8], "costInr": [700, 1800] },
+    { "mode": "cab", "durationHrs": [6.5, 7.5], "costInr": [1600, 2800], "notes": "Chittorgarh fort is a good halt" },
+    { "mode": "flight", "durationHrs": [1, 1.2], "costInr": [3000, 6000] }
+  ]},
+  { "id": "jaipur__jaisalmer", "from": "jaipur", "to": "jaisalmer", "options": [
+    { "mode": "train", "durationHrs": [11, 13], "costInr": [500, 2500], "overnight": true, "notes": "Overnight train saves a hotel night" },
+    { "mode": "cab", "durationHrs": [10, 11], "costInr": [2500, 4000], "notes": "Break at Jodhpur is strongly recommended" }
+  ]},
+  { "id": "udaipur__jaisalmer", "from": "udaipur", "to": "jaisalmer", "options": [
+    { "mode": "cab", "durationHrs": [8, 9.5], "costInr": [2200, 3800], "notes": "Better split with a night in Jodhpur" },
+    { "mode": "bus", "durationHrs": [10, 12], "costInr": [700, 1300], "overnight": true }
+  ]},
+  { "id": "delhi__varanasi", "from": "delhi", "to": "varanasi", "options": [
+    { "mode": "train", "durationHrs": [8, 13], "costInr": [700, 3000], "overnight": true, "notes": "Vande Bharat (day, ~8 h) or overnight sleeper/AC trains" },
+    { "mode": "flight", "durationHrs": [1.3, 1.5], "costInr": [3500, 7000] }
+  ]},
+  { "id": "delhi__rishikesh", "from": "delhi", "to": "rishikesh", "options": [
+    { "mode": "train", "durationHrs": [5, 6.5], "costInr": [500, 1500], "notes": "Train to Haridwar or Dehradun, then 30–60 min cab" },
+    { "mode": "cab", "durationHrs": [5.5, 7], "costInr": [1200, 2200] },
+    { "mode": "bus", "durationHrs": [6, 7.5], "costInr": [500, 900] }
+  ]},
+  { "id": "delhi__manali", "from": "delhi", "to": "manali", "options": [
+    { "mode": "bus", "durationHrs": [12, 15], "costInr": [1000, 2000], "overnight": true, "notes": "Overnight Volvo from Majnu ka Tilla / Kashmere Gate" },
+    { "mode": "flight", "durationHrs": [1.3, 1.5], "costInr": [5000, 12000], "notes": "To Kullu (Bhuntar); frequently cancelled in bad weather, plus 1.5 h road" },
+    { "mode": "cab", "durationHrs": [12, 14], "costInr": [3000, 5000] }
+  ]},
+  { "id": "manali__leh", "from": "manali", "to": "leh", "options": [
+    { "mode": "cab", "durationHrs": [14, 18], "costInr": [5000, 9000], "seasonal": { "openMonths": [6, 7, 8, 9, 10] }, "notes": "Takes 2 days with a night at Jispa or Sarchu; crosses passes above 5,000 m" },
+    { "mode": "bus", "durationHrs": [18, 22], "costInr": [2500, 4000], "seasonal": { "openMonths": [6, 7, 8, 9] }, "notes": "HRTC bus, 2 days" }
+  ]},
+  { "id": "delhi__leh", "from": "delhi", "to": "leh", "options": [
+    { "mode": "flight", "durationHrs": [1.3, 1.5], "costInr": [5000, 15000], "notes": "Morning flights only; fares spike in June" }
+  ]},
+  { "id": "manali__spiti", "from": "manali", "to": "spiti", "options": [
+    { "mode": "cab", "durationHrs": [8, 11], "costInr": [3000, 5500], "seasonal": { "openMonths": [6, 7, 8, 9, 10] }, "notes": "Via Atal Tunnel and Kunzum Pass; rough, unpaved stretches" }
+  ]},
+  { "id": "njp__darjeeling", "from": "njp", "to": "darjeeling", "options": [
+    { "mode": "cab", "durationHrs": [3, 4], "costInr": [400, 1200], "notes": "Shared jeep is cheapest" },
+    { "mode": "toy_train", "durationHrs": [7, 8], "costInr": [500, 1700], "notes": "Heritage ride; scenic but slow" }
+  ]},
+  { "id": "njp__gangtok", "from": "njp", "to": "gangtok", "options": [
+    { "mode": "cab", "durationHrs": [4, 5], "costInr": [400, 1500], "notes": "Shared or private; NH10 closes during monsoon landslides" }
+  ]},
+  { "id": "darjeeling__gangtok", "from": "darjeeling", "to": "gangtok", "options": [
+    { "mode": "cab", "durationHrs": [4, 5], "costInr": [500, 1500] }
+  ]},
+  { "id": "guwahati__shillong", "from": "guwahati", "to": "shillong", "options": [
+    { "mode": "cab", "durationHrs": [2.5, 3.5], "costInr": [400, 1200] },
+    { "mode": "bus", "durationHrs": [3, 4], "costInr": [200, 400] }
+  ]},
+  { "id": "guwahati__tawang", "from": "guwahati", "to": "tawang", "options": [
+    { "mode": "cab", "durationHrs": [14, 16], "costInr": [3000, 6000], "notes": "Do it in 2 days with a night at Dirang or Bomdila" }
+  ]},
+  { "id": "goa__hampi", "from": "goa", "to": "hampi", "options": [
+    { "mode": "cab", "durationHrs": [7, 8], "costInr": [2000, 3500] },
+    { "mode": "train", "durationHrs": [7, 9], "costInr": [300, 1200], "notes": "Vasco da Gama to Hosapete" },
+    { "mode": "bus", "durationHrs": [9, 10], "costInr": [700, 1300], "overnight": true }
+  ]},
+  { "id": "kochi__munnar", "from": "kochi", "to": "munnar", "options": [
+    { "mode": "cab", "durationHrs": [3.5, 4.5], "costInr": [900, 1800] },
+    { "mode": "bus", "durationHrs": [4.5, 5.5], "costInr": [150, 350], "notes": "KSRTC" }
+  ]},
+  { "id": "munnar__alleppey", "from": "munnar", "to": "alleppey", "options": [
+    { "mode": "cab", "durationHrs": [4.5, 5.5], "costInr": [1100, 2000] }
+  ]},
+  { "id": "kochi__alleppey", "from": "kochi", "to": "alleppey", "options": [
+    { "mode": "train", "durationHrs": [1.2, 1.8], "costInr": [50, 300] },
+    { "mode": "cab", "durationHrs": [1.5, 2], "costInr": [500, 1000] }
+  ]},
+  { "id": "chennai__pondicherry", "from": "chennai", "to": "pondicherry", "options": [
+    { "mode": "cab", "durationHrs": [3, 4], "costInr": [800, 1500], "notes": "East Coast Road; stop at Mahabalipuram" },
+    { "mode": "bus", "durationHrs": [3.5, 4.5], "costInr": [200, 500] }
+  ]},
+  { "id": "chennai__andaman", "from": "chennai", "to": "andaman", "options": [
+    { "mode": "flight", "durationHrs": [2, 2.3], "costInr": [5000, 12000], "notes": "Also direct from Kolkata, Delhi and Bengaluru" }
+  ]},
+  { "id": "portblair__havelock", "from": "andaman", "to": "andaman", "options": [
+    { "mode": "ferry", "durationHrs": [1.5, 2.5], "costInr": [1200, 2500], "notes": "Private ferries (Makruzz, Nautika, Green Ocean); book ahead in peak season" }
+  ]}
+]

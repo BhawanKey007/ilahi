@@ -1,0 +1,32 @@
+name: Wrong travel information
+description: A season, permit, closure day, travel time or price that ilAhi gets wrong
+labels: ["data"]
+body:
+  - type: input
+    id: place
+    attributes:
+      label: Place or route
+      placeholder: e.g. Rohtang Pass, Delhi → Agra train
+    validations:
+      required: true
+  - type: textarea
+    id: wrong
+    attributes:
+      label: What ilAhi says
+      description: Paste the message or describe what the plan shows.
+    validations:
+      required: true
+  - type: textarea
+    id: right
+    attributes:
+      label: What's correct
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      description: A link to an official or reliable source helps us fix it quickly.
+      placeholder: https://
+    validations:
+      required: true
