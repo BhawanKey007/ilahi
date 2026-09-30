@@ -33,12 +33,12 @@ export default {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { status: originOk ? 204 : 403, headers: cors });
     if (url.pathname === "/health") return json(200, { ok: true, model: env.GEMINI_MODEL || null, keySet: Boolean(env.GEMINI_API_KEY) });
-    if (url.pathname === "/selftest") {
+    if (url.pathname === "/selftest" || url.pathname === "/selftest/quick") {
       if (env.PLAN_LIMITER) {
         const { success } = await env.PLAN_LIMITER.limit({ key: "selftest:" + (request.headers.get("cf-connecting-ip") || "unknown") });
         if (!success) return json(429, { error: "rate_limited" });
       }
-      return json(200, await selfTest(env));
+      return json(200, await selfTest(env, url.pathname.endsWith("/quick")));
     }
     if (url.pathname !== "/plan" || request.method !== "POST") return json(404, { error: "not_found" });
     if (!originOk) return json(403, { error: "origin_not_allowed" });
@@ -109,11 +109,14 @@ async function callGemini(env, prompt, { maxOutputTokens = 32768 } = {}) {
 }
 
 /** GET /selftest runs a real sample plan and reports what happened (no plan content). */
-async function selfTest(env) {
+async function selfTest(env, quick = false) {
   if (!env.GEMINI_API_KEY) return { ok: false, step: "key", detail: "GEMINI_API_KEY isn't set on this Worker." };
   const brief = sanitizeBrief({ origin: "New Delhi", originId: "delhi", startDate: "2026-11-14", days: 3, vibes: ["heritage"] }, kb);
   const t0 = Date.now();
-  const g = await callGemini(env, buildPrompt({ engine, primaryId: "jaipur", brief }));
+  const prompt = quick
+    ? 'Reply with only this JSON: {"days":[{"day":1,"baseId":"jaipur","stops":[{"name":"Amber Fort"}]}]}'
+    : buildPrompt({ engine, primaryId: "jaipur", brief });
+  const g = await callGemini(env, prompt);
   const base = { model: env.GEMINI_MODEL || "gemini-3.5-flash", ms: Date.now() - t0, status: g.status, finishReason: g.finishReason, usage: g.usage };
   if (!g.ok) return { ok: false, step: "gemini", detail: g.detail, ...base };
   const plan = parsePlan(g.text);
