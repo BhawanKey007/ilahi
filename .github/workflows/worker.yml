@@ -35,6 +35,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: worker
+          wranglerVersion: "4.144.0"
       - name: Skipped
         if: env.CF_TOKEN == ''
         run: echo "No CLOUDFLARE_API_TOKEN secret yet, so the Worker wasn't deployed. See docs/SETUP.md."
